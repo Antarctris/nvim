@@ -27,7 +27,7 @@ vim.opt.isfname:append("@-@")
 
 vim.opt.updatetime = 50
 
-vim.opt.colorcolumn = "94"
+vim.opt.colorcolumn = "92"
 
 vim.api.nvim_set_option("clipboard", "unnamedplus")
 
