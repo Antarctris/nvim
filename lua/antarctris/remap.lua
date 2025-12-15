@@ -12,7 +12,11 @@ vim.keymap.set({ "n", "v" }, "<C-k>", "<C-d>zz")
 vim.keymap.set({ "n", "v" }, "<C-u>", "")
 vim.keymap.set({ "n", "v" }, "<C-d>", "")
 
--- Removal of unused mappings for use with plugins
+-- Redo
+vim.keymap.set("n", "<S-u>", vim.cmd.redo)
+
+-- Removal of unused mappings
+vim.keymap.set("n", "<C-r>", "")
 vim.keymap.set("i", "<C-u>", "")
 vim.keymap.set("i", "<C-h>", "")
 vim.keymap.set({ "n", "i" }, "<C-n>", "")
