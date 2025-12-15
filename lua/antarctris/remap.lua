@@ -1,3 +1,6 @@
+-- Remove space, so it can be used for Alt-Space -> Esc
+vim.keymap.set("n", "<Space>", "<Nop>")
+
 -- Colemak improvement
 vim.keymap.set({ "n", "v" }, "j", "h")
 vim.keymap.set({ "n", "v" }, "k", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })

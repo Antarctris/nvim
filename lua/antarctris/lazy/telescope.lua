@@ -3,6 +3,7 @@ return {
 	dependencies = {
 		"nvim-lua/plenary.nvim",
 		"BurntSushi/ripgrep",
+		"debugloop/telescope-undo.nvim",
 	},
 
 	config = function()
@@ -15,17 +16,30 @@ return {
 					},
 				},
 			},
+			extensions = {
+				undo = {
+					-- telescope-undo.nvim config
+				},
+			},
 		})
+		require("telescope").load_extension("undo")
 
-		-- TODO: More config, especially key mappings here
 		local builtin = require("telescope.builtin")
+		-- File pickers
 		vim.keymap.set("n", "<C-p>", builtin.find_files, {})
 		vim.keymap.set("n", "<C-f>", builtin.live_grep, {})
 		vim.keymap.set("n", "<C-b>", builtin.buffers, {})
+
+		-- Undo
+		vim.keymap.set("n", "<C-u>", "<cmd>Telescope undo<cr>")
+
+		-- LSP
 		vim.keymap.set("n", "<C-d>", function()
 			builtin.diagnostics({ bufnr = 0 })
 		end, {})
 		vim.keymap.set("n", "<C-S-d>", builtin.diagnostics, {})
+
+		-- Other
 		vim.keymap.set("n", "<leader>th", builtin.help_tags, {})
 	end,
 }
