@@ -19,6 +19,7 @@ return {
 			extensions = {
 				undo = {
 					-- telescope-undo.nvim config
+					-- Note that applying an undo state, needs to used Ctrl-Enter!
 				},
 			},
 		})
