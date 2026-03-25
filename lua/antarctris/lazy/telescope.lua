@@ -35,10 +35,17 @@ return {
 		vim.keymap.set("n", "<C-u>", "<cmd>Telescope undo<cr>")
 
 		-- LSP
-		vim.keymap.set("n", "<C-d>", function()
+		vim.keymap.set("n", "gdb", function()
 			builtin.diagnostics({ bufnr = 0 })
 		end, {})
-		vim.keymap.set("n", "<C-S-d>", builtin.diagnostics, {})
+		vim.keymap.set("n", "gdm", builtin.diagnostics, {})
+		vim.keymap.set("n", "grr", builtin.lsp_references)
+		vim.keymap.set("n", "gdd", builtin.lsp_definitions)
+		vim.keymap.set("n", "gdi", builtin.lsp_implementations)
+		vim.keymap.set("n", "gdt", builtin.lsp_type_definitions)
+		vim.keymap.set("n", "gds", builtin.lsp_document_symbols)
+		vim.keymap.set("n", "gws", builtin.lsp_workspace_symbols)
+		-- vim.keymap.set("n", "gdws", builtin.lsp_dynamic_workspace_symbols)
 
 		-- Other
 		vim.keymap.set("n", "<leader>th", builtin.help_tags, {})

@@ -94,11 +94,17 @@ return {
 			},
 		})
 
+		vim.keymap.set("n", "gm", vim.lsp.buf.hover)
 		vim.keymap.set("n", "grn", vim.lsp.buf.rename)
-		vim.keymap.set("n", "gra", vim.lsp.buf.code_action)
-		vim.keymap.set("n", "grr", vim.lsp.buf.references)
-		vim.keymap.set("n", "grd", vim.lsp.buf.definition)
-		--vim.keymap.set({ "n", "i" }, "<C-s>", vim.lsp.buf.signature_help)
+		vim.keymap.set("n", "gca", vim.lsp.buf.code_action)
+		vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help)
+		-- Exported to telescope:
+		-- vim.keymap.set("n", "gd", vim.lsp.buf.definition)
+		-- vim.keymap.set("n", "grr", vim.lsp.buf.references)
+		-- vim.keymap.set("n", "gws", vim.lsp.buf.workspace_symbol)
+		-- vim.keymap.set("n", "gdm", vim.diagnostic.open_float)
+		vim.keymap.set("n", "g[d", vim.diagnostic.goto_prev)
+		vim.keymap.set("n", "g]d", vim.diagnostic.goto_next)
 
 		vim.cmd([[autocmd BufWritePre * lua vim.lsp.buf.format()]])
 	end,
