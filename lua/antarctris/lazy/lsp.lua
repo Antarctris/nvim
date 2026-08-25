@@ -75,6 +75,20 @@ return {
 			},
 		})
 
+		vim.lsp.config("dartls", {
+			cmd = { "dart", "language-server", "--protocol=lsp" },
+			filetypes = { "dart" },
+			root_markers = { "pubspec.yaml" },
+			capabilities = capabilities,
+			settings = {
+				dart = {
+					completeFunctionCalls = true,
+					showTodos = true,
+				},
+			},
+		})
+		vim.lsp.enable("dartls")
+
 		vim.lsp.config("stylua_lsp", {
 			cmd = { "stylua", "--lsp" },
 			filetypes = { "lua" }, -- maybe also "luau" if you use that
