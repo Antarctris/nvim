@@ -18,15 +18,16 @@ vim.opt.undofile = true
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 
---vim.opt.termguicolors = true
+-- Use the terminal's 16 ANSI colors so the colorscheme follows alacritty
+vim.opt.termguicolors = false
 
 vim.opt.scrolloff = 999
 vim.opt.sidescrolloff = 32
 vim.opt.signcolumn = "yes"
 vim.opt.isfname:append("@-@")
 
-vim.opt.updatetime = 50
+vim.opt.updatetime = 250
 
 vim.opt.colorcolumn = "92"
 
-vim.api.nvim_set_option("clipboard", "unnamedplus")
+vim.opt.clipboard = "unnamedplus"

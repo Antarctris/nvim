@@ -1,19 +1,18 @@
 return {
 	"neovim/nvim-lspconfig",
+	event = { "BufReadPre", "BufNewFile" },
 	dependencies = {
 		"williamboman/mason.nvim",
 		"williamboman/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
 		"hrsh7th/cmp-buffer",
 		"hrsh7th/cmp-path",
-		"hrsh7th/cmp-cmdline",
 		"hrsh7th/nvim-cmp",
 		"L3MON4D3/LuaSnip",
 		"saadparwaiz1/cmp_luasnip",
 		"j-hui/fidget.nvim",
 		"rachartier/tiny-inline-diagnostic.nvim",
 	},
-
 	config = function()
 		local cmp = require("cmp")
 		local cmp_lsp = require("cmp_nvim_lsp")
@@ -24,9 +23,8 @@ return {
 			cmp_lsp.default_capabilities()
 		)
 
-		-- Replace Neovim's default virtual text diagnostics
+		-- Replaces virtual text diagnostics, which are off by default since Neovim 0.11
 		require("tiny-inline-diagnostic").setup()
-		vim.diagnostic.config({ virtual_text = false })
 
 		require("fidget").setup({})
 		require("mason").setup({
@@ -56,30 +54,21 @@ return {
 				["<C-Space>"] = cmp.mapping.complete(),
 			}),
 			sources = cmp.config.sources({
+				{ name = "lazydev", group_index = 0 }, -- Neovim API completion, only active in lua files
 				{ name = "nvim_lsp" },
+				{ name = "path" },
 				{ name = "luasnip" }, -- For luasnip users.
 			}, {
 				{ name = "buffer" },
 			}),
 		})
 
-		require("mason-lspconfig").setup({
-			ensure_installed = {},
-			automatic_installation = false,
-			handlers = {
-				function(server_name) -- default handler (optional)
-					require("lspconfig")[server_name].setup({
-						capabilities = capabilities,
-					})
-				end,
-			},
-		})
+		-- Applies to every server, including the ones mason-lspconfig enables automatically
+		vim.lsp.config("*", { capabilities = capabilities })
+		require("mason-lspconfig").setup({})
 
+		-- cmd, filetypes and root_markers come from nvim-lspconfig's lsp/<name>.lua
 		vim.lsp.config("dartls", {
-			cmd = { "dart", "language-server", "--protocol=lsp" },
-			filetypes = { "dart" },
-			root_markers = { "pubspec.yaml" },
-			capabilities = capabilities,
 			settings = {
 				dart = {
 					completeFunctionCalls = true,
@@ -87,14 +76,19 @@ return {
 				},
 			},
 		})
-		vim.lsp.enable("dartls")
+		vim.lsp.enable({ "dartls", "stylua" })
 
-		vim.lsp.config("stylua_lsp", {
-			cmd = { "stylua", "--lsp" },
-			filetypes = { "lua" }, -- maybe also "luau" if you use that
-			root_markers = { ".git", ".stylua.toml", "stylua.toml" }, -- optional/project-specific
-		})
-		vim.lsp.enable("stylua_lsp")
+		-- Not installed by mason (its binaries often fail on NixOS), so only enable it if present
+		if vim.fn.executable("lua-language-server") == 1 then
+			vim.lsp.config("lua_ls", {
+				on_init = function(client)
+					-- Leave formatting to stylua
+					client.server_capabilities.documentFormattingProvider = false
+					client.server_capabilities.documentRangeFormattingProvider = false
+				end,
+			})
+			vim.lsp.enable("lua_ls")
+		end
 
 		vim.diagnostic.config({
 			-- update_in_insert = true,
@@ -102,24 +96,45 @@ return {
 				focusable = false,
 				style = "minimal",
 				border = "rounded",
-				source = "always",
+				source = true,
 				header = "",
 				prefix = "",
 			},
 		})
 
+		-- grn (rename) and insert-mode <C-s> (signature help) are Neovim defaults
 		vim.keymap.set("n", "gm", vim.lsp.buf.hover)
-		vim.keymap.set("n", "grn", vim.lsp.buf.rename)
 		vim.keymap.set("n", "gca", vim.lsp.buf.code_action)
-		vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help)
 		-- Exported to telescope:
 		-- vim.keymap.set("n", "gd", vim.lsp.buf.definition)
 		-- vim.keymap.set("n", "grr", vim.lsp.buf.references)
 		-- vim.keymap.set("n", "gws", vim.lsp.buf.workspace_symbol)
 		-- vim.keymap.set("n", "gdm", vim.diagnostic.open_float)
-		vim.keymap.set("n", "g[d", vim.diagnostic.goto_prev)
-		vim.keymap.set("n", "g]d", vim.diagnostic.goto_next)
+		vim.keymap.set("n", "g[d", function()
+			vim.diagnostic.jump({ count = -1, float = true })
+		end)
+		vim.keymap.set("n", "g]d", function()
+			vim.diagnostic.jump({ count = 1, float = true })
+		end)
 
-		vim.cmd([[autocmd BufWritePre * lua vim.lsp.buf.format()]])
+		-- Format on save, but only in buffers with an attached LSP that can format
+		local format_group = vim.api.nvim_create_augroup("lsp_format", { clear = true })
+		vim.api.nvim_create_autocmd("LspAttach", {
+			group = format_group,
+			callback = function(args)
+				local client = vim.lsp.get_client_by_id(args.data.client_id)
+				if not client or not client:supports_method("textDocument/formatting") then
+					return
+				end
+				vim.api.nvim_clear_autocmds({ group = format_group, event = "BufWritePre", buffer = args.buf })
+				vim.api.nvim_create_autocmd("BufWritePre", {
+					group = format_group,
+					buffer = args.buf,
+					callback = function()
+						vim.lsp.buf.format({ bufnr = args.buf })
+					end,
+				})
+			end,
+		})
 	end,
 }
