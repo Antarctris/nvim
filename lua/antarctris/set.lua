@@ -18,8 +18,19 @@ vim.opt.undofile = true
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 
--- Use the terminal's 16 ANSI colors so the colorscheme follows alacritty
-vim.opt.termguicolors = false
+vim.opt.termguicolors = true
+
+-- Colors come from noctalia via matugen (lua/matugen.lua), which reapplies them on SIGUSR1.
+-- base16-nvim does not fire ColorScheme, so do it here to let lualine etc. pick them up.
+vim.api.nvim_create_autocmd("Signal", {
+	pattern = "SIGUSR1",
+	callback = function()
+		-- Give matugen's own SIGUSR1 handler time to apply the new colors first
+		vim.defer_fn(function()
+			vim.api.nvim_exec_autocmds("ColorScheme", {})
+		end, 100)
+	end,
+})
 
 vim.opt.scrolloff = 999
 vim.opt.sidescrolloff = 32
