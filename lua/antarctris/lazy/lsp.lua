@@ -2,8 +2,6 @@ return {
 	"neovim/nvim-lspconfig",
 	event = { "BufReadPre", "BufNewFile" },
 	dependencies = {
-		"williamboman/mason.nvim",
-		"williamboman/mason-lspconfig.nvim",
 		"hrsh7th/cmp-nvim-lsp",
 		"hrsh7th/cmp-buffer",
 		"hrsh7th/cmp-path",
@@ -27,16 +25,6 @@ return {
 		require("tiny-inline-diagnostic").setup()
 
 		require("fidget").setup({})
-		require("mason").setup({
-			PATH = "append",
-			ui = {
-				icons = {
-					package_installed = "✓",
-					package_pending = "➜",
-					package_uninstalled = "✗",
-				},
-			},
-		})
 
 		local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
@@ -63,9 +51,8 @@ return {
 			}),
 		})
 
-		-- Applies to every server, including the ones mason-lspconfig enables automatically
+		-- Applies to every server, including the auto-enabled ones below
 		vim.lsp.config("*", { capabilities = capabilities })
-		require("mason-lspconfig").setup({})
 
 		-- cmd, filetypes and root_markers come from nvim-lspconfig's lsp/<name>.lua
 		vim.lsp.config("dartls", {
@@ -76,19 +63,59 @@ return {
 				},
 			},
 		})
-		vim.lsp.enable({ "dartls", "stylua" })
+		vim.lsp.config("lua_ls", {
+			on_init = function(client)
+				-- Leave formatting to stylua
+				client.server_capabilities.documentFormattingProvider = false
+				client.server_capabilities.documentRangeFormattingProvider = false
+			end,
+		})
 
-		-- Not installed by mason (its binaries often fail on NixOS), so only enable it if present
-		if vim.fn.executable("lua-language-server") == 1 then
-			vim.lsp.config("lua_ls", {
-				on_init = function(client)
-					-- Leave formatting to stylua
-					client.server_capabilities.documentFormattingProvider = false
-					client.server_capabilities.documentRangeFormattingProvider = false
-				end,
-			})
-			vim.lsp.enable("lua_ls")
+		-- Servers to enable once their executable is available, e.g. zls from a project's nix shell.
+		-- Rechecked on every FileType, so tools that appear on PATH later are found too.
+		local servers = {
+			lua_ls = "lua-language-server",
+			stylua = "stylua",
+			texlab = "texlab",
+			clangd = "clangd",
+			zls = "zls",
+			rust_analyzer = "rust-analyzer",
+			gopls = "gopls",
+			dartls = "dart",
+			-- ts_ls also picks up a project-local install from node_modules
+			ts_ls = function(buf)
+				return vim.fn.executable("typescript-language-server") == 1
+					or #vim.fs.find("node_modules/.bin/typescript-language-server", {
+							path = vim.fs.dirname(vim.api.nvim_buf_get_name(buf)),
+							upward = true,
+						})
+						> 0
+			end,
+			basedpyright = "basedpyright-langserver",
+		}
+		local function enable_available(buf)
+			for name, exe in pairs(servers) do
+				if not vim.lsp.is_enabled(name) then
+					local available
+					if type(exe) == "function" then
+						available = exe(buf)
+					else
+						available = vim.fn.executable(exe) == 1
+					end
+					if available then
+						vim.lsp.enable(name)
+					end
+				end
+			end
 		end
+		vim.api.nvim_create_autocmd("FileType", {
+			group = vim.api.nvim_create_augroup("lsp_auto_enable", { clear = true }),
+			callback = function(args)
+				enable_available(args.buf)
+			end,
+		})
+		-- The plugin is lazy-loaded, so the buffer that triggered it may already have a filetype
+		enable_available(vim.api.nvim_get_current_buf())
 
 		vim.diagnostic.config({
 			-- update_in_insert = true,
